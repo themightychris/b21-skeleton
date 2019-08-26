@@ -181,8 +181,6 @@ class DataWarehouseExporter
         }
 
         DB::resumeQueryLogging();
-
-        // static::respond('');
     }
 
 }
