@@ -119,10 +119,13 @@ class DataWarehouseExporter
 
         $Pdo = static::getPdo();
         $exporters = static::$exporters;
+        $schema = static::$postgresSchema;
 
         DB::suspendQueryLogging();
         ActiveRecord::$useCache = true;
         set_time_limit(0);
+
+        $renameTables = [];
 
         foreach ($exporters as $scriptName => $scriptCfg) {
             try {
@@ -152,8 +155,9 @@ class DataWarehouseExporter
                     $query = [];
                 }
 
-                // truncate table
-                $Pdo->nonQuery("TRUNCATE ONLY {$scriptCfg['table']} RESTART IDENTITY");
+                // create temp table
+                $tempTable = $scriptCfg['table'] . '_temp';
+                $Pdo->nonQuery("CREATE TABLE $schema.{$tempTable} (like $schema.{$scriptCfg['table']} including all);");
 
                 $results = call_user_func($config['buildRows'], $query, $config);
                 foreach ($results as $row) {
@@ -169,8 +173,10 @@ class DataWarehouseExporter
                         }
                         unset($row[$column]);
                     }
-                    $Pdo->insert($scriptCfg['table'], $row);
+                    $Pdo->insert($tempTable, $row);
                 }
+
+                $renameTables[$tempTable] = $scriptCfg['table'];
 
             } catch (\Exception $e) {
                 \MICS::dump($e, 'exception');
@@ -181,6 +187,13 @@ class DataWarehouseExporter
         }
 
         DB::resumeQueryLogging();
+
+        foreach ($renameTables as $temp => $original) {
+            // drop original table
+            $Pdo->nonQuery("DROP TABLE $schema.$original");
+            // rename table
+            $Pdo->nonQuery("ALTER TABLE $schema.$temp RENAME TO $original");
+        }
     }
 
 }
