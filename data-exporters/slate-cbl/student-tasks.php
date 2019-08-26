@@ -9,7 +9,7 @@ return [
         'StudentNumber' => 'Student Number',
         'TaskTitle' => 'Task Title',
         'TaskExperienceType' => 'Experience Type',
-        'CreatorFullName' => 'Teacher Assigned',
+        'CreatorUsername' => 'Teacher Assigned',
         'Created',
         'SectionTitle' => 'Course Section',
         'Status' => 'Current Status of task',
@@ -138,17 +138,20 @@ return [
             $skillCodes = array_unique($skillCodes);
             natcasesort($skillCodes);
 
+            $dueDate = $StudentTask->DueDate ? date('m/d/Y', $StudentTask->DueDate) : $StudentTask->Task->DueDate ? date('m/d/Y', $StudentTask->Task->DueDate) : null;
+            $expirationDate = $StudentTask->ExpirationDate ? date('m/d/Y', $StudentTask->ExpirationDate) : $StudentTask->Task->ExpirationDate ? date('m/d/Y', $StudentTask->Task->ExpirationDate) : null;
+
             yield [
                 'StudentFullName' => $StudentTask->Student->FullName,
                 'StudentNumber' => $StudentTask->Student->StudentNumber,
                 'TaskTitle' => $StudentTask->Task->Title,
                 'TaskExperienceType' => $StudentTask->Task->ExperienceType,
-                'CreatorFullName' => $StudentTask->Creator->FullName,
+                'CreatorUsername' => $StudentTask->Creator->Username,
                 'Created' =>  $StudentTask->Created ? date('m/d/Y', $StudentTask->Created) : null,
                 'SectionTitle' => $StudentTask->Task->Section->Title,
                 'Status' => $StudentTask->TaskStatus,
-                'DueDate' => $StudentTask->DueDate ? date('m/d/Y', $StudentTask->DueDate) : null,
-                'ExpirationDate' => $StudentTask->ExpirationDate ? date('m/d/Y', $StudentTask->ExpirationDate) : null,
+                'DueDate' => $dueDate,
+                'ExpirationDate' => $expirationDate,
                 'SubmittedDate' => $submissionTimestamp ? date('m/d/Y', $submissionTimestamp) : null,
                 'SkillCodes' => implode(', ', $skillCodes),
                 'CourseCode' => $StudentTask->Task->Section->Course->Code,

@@ -10,11 +10,10 @@ return [
     'title' => 'Demonstrations',
     'description' => 'Each row represents a demonstration',
     'filename' => 'demonstrations',
+    // TODO: confirm headers are correct
     'headers' => [
         'Timestamp',
         'Modified',
-        // 'Submitted by',
-        // 'ID',
         'StudentNumber',
         'Type of experience',
         'Context',
@@ -67,17 +66,15 @@ return [
 
         $results = \DB::query(
             'SELECT %2$s.ID, '.
-                    // 'DATE(%2$s.Demonstrated) AS Demonstrated, '.
-                    'DATE(%2$s.Created) AS Created, '.
-                    'DATE(%2$s.Modified) AS Modified, '.
-                    // 'CONCAT(%4$s.FirstName, " ", %4$s.LastName) AS Creator, '.
+                    '%2$s.StudentID, '.
+                    'CONCAT(%4$s.FirstName, " ", %4$s.LastName) AS Creator, '.
                     '%5$s.StudentNumber AS StudentNumber, '.
-                    // 'CONCAT(%5$s.FirstName, " ", %5$s.LastName) AS Student, '.
+                    'CONCAT(%5$s.FirstName, " ", %5$s.LastName) AS Student, '.
                     '%2$s.ExperienceType, '.
                     '%2$s.Context, '.
                     '%2$s.PerformanceType, '.
-                    '%2$s.ArtifactURL '.
-                    ', %4$s.Username AS TeacherUsername ' .
+                    '%2$s.ArtifactURL, '.
+                    '%4$s.Username AS TeacherUsername ' .
             ' FROM `%1$s` %2$s '.
             ' LEFT JOIN `%3$s` %4$s '.
             '   ON %2$s.CreatorID = %4$s.ID '.
@@ -105,6 +102,8 @@ return [
 
                 $row['Competency'] = $demonstrationSkills[$i]->Skill->Competency->Code;
                 $row['Standard'] = $demonstrationSkills[$i]->Skill->Code;
+                $row['Created'] = date('m/d/Y', $demonstrationSkills[$i]->Created);
+                $row['Modified'] = $demonstrationSkills[$i]->Modified ? date('m/d/Y', $demonstrationSkills[$i]->Modified) : null;
 
                 // For overriden demonstrations, rating should be "O" rather than the DemonstratedLevel
                 if ($demonstrationSkills[$i]->Override) {
