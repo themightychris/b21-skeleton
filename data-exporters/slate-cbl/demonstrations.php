@@ -10,19 +10,22 @@ return [
     'title' => 'Demonstrations',
     'description' => 'Each row represents a demonstration',
     'filename' => 'demonstrations',
-    // TODO: confirm headers are correct
     'headers' => [
-        'Timestamp',
-        'Modified',
-        'StudentNumber',
-        'Type of experience',
+        'StudentID',
+        'CreatorFullName' => 'Teacher FullName',
+        'StudentNumber' => 'Student Number',
+        'StudentFullName' => 'Student FullName',
+        'ExperienceType' => 'Experience Type',
         'Context',
-        'Performance task',
-        'Artifact',
+        'PerformanceType' => 'Performance Type',
+        'ArtifactURL',
+        'CreatorUsername' => 'Teacher Username',
         'Competency',
-        'Standard',
+        'Standard' => 'Skill',
+        'Created',
+        'Modified',
         'Rating',
-        'Level'
+        'Level' => 'Portfolio'
     ],
     'readQuery' => function (array $input) {
         $query = [
@@ -67,14 +70,14 @@ return [
         $results = \DB::query(
             'SELECT %2$s.ID, '.
                     '%2$s.StudentID, '.
-                    'CONCAT(%4$s.FirstName, " ", %4$s.LastName) AS Creator, '.
+                    'CONCAT(%4$s.FirstName, " ", %4$s.LastName) AS CreatorFullName, '.
                     '%5$s.StudentNumber AS StudentNumber, '.
-                    'CONCAT(%5$s.FirstName, " ", %5$s.LastName) AS Student, '.
+                    'CONCAT(%5$s.FirstName, " ", %5$s.LastName) AS StudentFullName, '.
                     '%2$s.ExperienceType, '.
                     '%2$s.Context, '.
                     '%2$s.PerformanceType, '.
                     '%2$s.ArtifactURL, '.
-                    '%4$s.Username AS TeacherUsername ' .
+                    '%4$s.Username AS CreatorUsername ' .
             ' FROM `%1$s` %2$s '.
             ' LEFT JOIN `%3$s` %4$s '.
             '   ON %2$s.CreatorID = %4$s.ID '.

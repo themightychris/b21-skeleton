@@ -81,8 +81,8 @@ class DataWarehouseExporter
             'query' => [],
             'headers' => [
                 'StudentID' => null,
-                'Creator' => null,
-                'Student' => null,
+                'CreatorFullName' => null,
+                'StudentFullName' => null,
 
                 'ArtifactURL' => 'artifact',
                 'Standard' => 'skill',
@@ -91,7 +91,7 @@ class DataWarehouseExporter
                 'Context' => 'experiencename',
                 'Created' => 'timestamp',
                 'Level' => 'portfolio',
-                'TeacherUsername' => 'teacherstafffk'
+                'CreatorUsername' => 'teacherstafffk'
             ]
         ]
     ];
