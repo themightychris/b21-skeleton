@@ -5,6 +5,8 @@ Git::$repositories['b21-skeleton'] = [
     'originBranch' => 'master',
     'workingBranch' => 'master',
     'trees' => [
-        'php-config'
+        'php-config',
+        'data-exporters',
+        'php-classes/Slate/CBL/DataWarehouseExporter.php'
     ]
 ];
