@@ -34,6 +34,23 @@ return [
             'to' => null
         ];
 
+        $Term = null;
+        if (!empty($input['term'])) {
+            if ($input['term'] === 'current') {
+                $Term = Slate\Term::getCurrent();
+            } elseif ($query['term'] === 'current-master') {
+                $Term = Slate\Term::getCurrent();
+                $Term = $Term ? $Term->getMaster() : null;
+            } else {
+                $Term = Slate\Term::getByHandle($query['term']);
+            }
+
+            if ($Term) {
+                $query['from'] = $Term->StartDate;
+                $query['to'] = $Term->EndDate;
+            }
+        }
+
         return $query;
     },
     'buildRows' => function (array $query = [], array $config = []) {

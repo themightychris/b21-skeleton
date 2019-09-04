@@ -24,11 +24,16 @@ return [
         $query = [
             'students' => 'all',
             'date_after' => null,
-            'date_before' => null
+            'date_before' => null,
+            'term' => null
         ];
 
         if (!empty($input['students'])) {
             $query['students'] = $input['students'];
+        }
+
+        if (!empty($input['term'])) {
+            $query['term'] = $input['term'];
         }
 
         if (!empty($input['date_after'])) {
@@ -75,6 +80,31 @@ return [
             $conditions[] = 'FALSE';
         }
 
+        $Term = null;
+        if ($query['term']) {
+            if ($query['term'] === 'current') {
+                $Term = Slate\Term::getCurrent();
+            } elseif ($query['term'] === 'current-master') {
+                $Term = Slate\Term::getCurrent();
+                $Term = $Term ? $Term->getMaster() : null;
+            } else {
+                $Term = Slate\Term::getByHandle($query['term']);
+            }
+
+            if ($Term) {
+                $sectionIdsInTerm = array_map(function($S) {
+                    return $S->ID;
+                }, Slate\Courses\Section::getAllByWhere([
+                    'TermID' => $Term->ID
+                ]));
+                $taskTableAlias = Slate\CBL\Tasks\Task::getTableAlias();
+                $taskTableName = Slate\CBL\Tasks\Task::$tableName;
+
+                $joinConditions = " JOIN `{$taskTableName}` {$taskTableAlias} ON {$taskTableAlias}.ID = StudentTask.TaskID";
+                $conditions[] =  $taskTableAlias. '.SectionID IN (' . implode($sectionIdsInTerm, ', ') . ')';
+            }
+        }
+
         if ($query['date_after'] && $query['date_before']) {
             $conditions['Created'] = [
                 'operator' => 'BETWEEN',
@@ -104,11 +134,13 @@ return [
             '
                 SELECT StudentTask.*
                     FROM `%s` StudentTask
+                    %s
                     WHERE (%s)
                     ORDER BY %s
             ',
             [
                 Slate\CBL\Tasks\StudentTask::$tableName,
+                $Term ? $joinConditions : '',
                 count($conditions) ? join(') AND (', $conditions) : 'TRUE',
                 implode(',', $order)
             ]
