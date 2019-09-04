@@ -3,8 +3,9 @@
 namespace Slate\CBL;
 
 use ActiveRecord;
-use DB;
 use Exception;
+use DB;
+use RequestHandler;
 use Site;
 
 use Slate\People\Student;
@@ -57,7 +58,9 @@ class DataWarehouseExporter
         ],
         'slate-cbl/student-tasks' => [
             'table' => 'studenttask',
-            'query' => [],
+            'query' => [
+                'term' => 'current-master'
+            ],
             'headers' => [
                 'StudentFullName' => null,
 
@@ -78,7 +81,9 @@ class DataWarehouseExporter
         ],
         'slate-cbl/demonstrations' => [
             'table' => 'studentrating',
-            'query' => [],
+            'query' => [
+                'term' => 'current-master'
+            ],
             'headers' => [
                 'StudentID' => null,
                 'CreatorFullName' => null,
@@ -127,8 +132,8 @@ class DataWarehouseExporter
 
         $renameTables = [];
 
-        foreach ($exporters as $scriptName => $scriptCfg) {
-            try {
+        try {
+            foreach ($exporters as $scriptName => $scriptCfg) {
                 $scriptNode = Site::resolvePath("data-exporters/{$scriptName}.php");
 
                 if (!$scriptNode) {
@@ -155,44 +160,49 @@ class DataWarehouseExporter
                     $query = [];
                 }
 
-                // create temp table
-                $tempTable = $scriptCfg['table'] . '_temp';
-                $Pdo->nonQuery("CREATE TABLE $schema.{$tempTable} (like $schema.{$scriptCfg['table']} including all);");
+                // create temp table and copy data
+                $tempTable = $scriptCfg['table'] . '_bak';
+                $Pdo->nonQuery("CREATE TABLE IF NOT EXISTS $schema.{$tempTable} (like $schema.{$scriptCfg['table']} including all);");
+                $Pdo->nonQuery("INSERT INTO $schema.{$tempTable} SELECT * FROM $schema.{$scriptCfg['table']}");
 
                 $results = call_user_func($config['buildRows'], $query, $config);
+                $rows = [];
                 foreach ($results as $row) {
-                // \MICS::dump($row, 'row');
+                    $copiedRow = [];
 
                     foreach($row as $column => $value) {
                         if (!empty($scriptCfg['headers']) && array_key_exists($column, $scriptCfg['headers'])) {
                             if ($scriptCfg['headers'][$column]) {
-                                $row[$scriptCfg['headers'][$column]] = $value;
+                                $copiedRow[$scriptCfg['headers'][$column]] = $value;
                             }
                         } else {
-                            $row[strtolower($column)] = $value;
+                            $copiedRow[strtolower($column)] = $value;
                         }
-                        unset($row[$column]);
                     }
-                    $Pdo->insert($tempTable, $row);
+                    $rows[] = $copiedRow;
                 }
 
-                $renameTables[$tempTable] = $scriptCfg['table'];
+                // truncate table, and insert rows
+                $Pdo->nonQuery("TRUNCATE TABLE $schema.{$scriptCfg['table']} RESTART IDENTITY;");
 
-            } catch (\Exception $e) {
-                \MICS::dump($e, 'exception');
-                // $failedScripts[] = $scriptNode;
-                // continue;
-                \MICS::dump($row, 'row');
+                if (!empty($rows)) {
+                    $Pdo->insertMultiple($scriptCfg['table'], $rows);
+                    unset($rows);
+                }
+
+                $renameTables[$scriptCfg['table']] = $tempTable;
             }
+        } catch (\Exception $e) {
+            return RequestHandler::throwInvalidRequestError('Unable to complete export: '. $e->getMessage());
+        } finally {
+            DB::resumeQueryLogging();
         }
 
-        DB::resumeQueryLogging();
-
-        foreach ($renameTables as $temp => $original) {
-            // drop original table
-            $Pdo->nonQuery("DROP TABLE $schema.$original");
+        foreach ($renameTables as $original => $backup) {
+            // drop backup table
+            $Pdo->nonQuery("DROP TABLE $schema.$backup");
             // rename table
-            $Pdo->nonQuery("ALTER TABLE $schema.$temp RENAME TO $original");
+            // $Pdo->nonQuery("ALTER TABLE $schema.$original RENAME TO $schema.$backup");
         }
     }
 
