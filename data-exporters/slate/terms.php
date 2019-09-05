@@ -49,7 +49,7 @@ return [
         while ($record = $result->fetch_assoc()) {
             $Term = Term::instantiateRecord($record);
 
-            list($termType, $termTitle) = explode('.', $Term->Title);
+            list($termType, $termTitle) = explode('.', $Term->Handle);
 
             yield [
                 'StartDate' => $Term->StartDate,
