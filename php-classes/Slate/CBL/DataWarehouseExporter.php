@@ -163,10 +163,6 @@ class DataWarehouseExporter
                     $query = [];
                 }
 
-                // create temp table and copy data
-                $tempTable = $scriptCfg['table'] . '_bak';
-                $Pdo->nonQuery("CREATE TABLE IF NOT EXISTS $schema.{$tempTable} (like $schema.{$scriptCfg['table']} including all);");
-                $Pdo->nonQuery("INSERT INTO $schema.{$tempTable} SELECT * FROM $schema.{$scriptCfg['table']}");
 
                 $results = call_user_func($config['buildRows'], $query, $config);
                 $rows = [];
@@ -185,14 +181,18 @@ class DataWarehouseExporter
                     $rows[] = $copiedRow;
                 }
 
-                // truncate table, and insert rows
-                $Pdo->nonQuery("TRUNCATE TABLE $schema.{$scriptCfg['table']} RESTART IDENTITY;");
+                // create backup table and copy data
+                $tempTable = $scriptCfg['table'] . '_bak';
+                $Pdo->nonQuery("CREATE TABLE $schema.{$tempTable} (like $schema.{$scriptCfg['table']} including all);");
+                $Pdo->nonQuery("INSERT INTO $schema.{$tempTable} SELECT * FROM $schema.{$scriptCfg['table']}");
 
+                // truncate original table, and insert rows
+                $Pdo->nonQuery("TRUNCATE TABLE $schema.{$scriptCfg['table']} RESTART IDENTITY;");
                 if (!empty($rows)) {
                     $Pdo->insertMultiple($scriptCfg['table'], $rows);
                     unset($rows);
                 }
-
+                // truncate backup table later
                 $renameTables[$scriptCfg['table']] = $tempTable;
             }
         } catch (\Exception $e) {
