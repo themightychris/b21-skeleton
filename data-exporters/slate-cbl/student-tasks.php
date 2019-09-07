@@ -173,6 +173,7 @@ return [
 
             $dueDate = $StudentTask->DueDate ? date('m/d/Y', $StudentTask->DueDate) : $StudentTask->Task->DueDate ? date('m/d/Y', $StudentTask->Task->DueDate) : null;
             $expirationDate = $StudentTask->ExpirationDate ? date('m/d/Y', $StudentTask->ExpirationDate) : $StudentTask->Task->ExpirationDate ? date('m/d/Y', $StudentTask->Task->ExpirationDate) : null;
+            $assignedDate = date('m/d/Y', $StudentTask->Created);
 
             yield [
                 'ID' => $StudentTask->ID,
@@ -181,12 +182,13 @@ return [
                 'TaskTitle' => $StudentTask->Task->Title,
                 'TaskExperienceType' => $StudentTask->Task->ExperienceType,
                 'CreatorUsername' => $StudentTask->Creator->Username,
-                'Created' =>  $StudentTask->Created ? date('m/d/Y', $StudentTask->Created) : null,
+                'Created' =>  $StudentTask->Task->Created ? date('m/d/Y H:i:s P', $StudentTask->Task->Created) : null,
                 'SectionTitle' => $StudentTask->Task->Section->Title,
                 'Status' => $StudentTask->TaskStatus,
                 'DueDate' => $dueDate,
                 'ExpirationDate' => $expirationDate,
                 'SubmittedDate' => $submissionTimestamp ? date('m/d/Y', $submissionTimestamp) : null,
+                'AssignedDate' => $assignedDate,
                 'SkillCodes' => implode(', ', $skillCodes),
                 'CourseCode' => $StudentTask->Task->Section->Course->Code,
                 'TermTitle' => $StudentTask->Task->Section->Term->Title

@@ -123,8 +123,8 @@ return [
 
                 $row['Competency'] = $demonstrationSkills[$i]->Skill->Competency->Code;
                 $row['Standard'] = $demonstrationSkills[$i]->Skill->Code;
-                $row['Created'] = date('m/d/Y', $demonstrationSkills[$i]->Created);
-                $row['Modified'] = $demonstrationSkills[$i]->Modified ? date('m/d/Y', $demonstrationSkills[$i]->Modified) : null;
+                $row['Created'] = date('m/d/Y H:i:s P', $demonstrationSkills[$i]->Created);
+                $row['Modified'] = $demonstrationSkills[$i]->Modified ? date('m/d/Y H:i:s P', $demonstrationSkills[$i]->Modified) : null;
 
                 // For overriden demonstrations, rating should be "O" rather than the DemonstratedLevel
                 if ($demonstrationSkills[$i]->Override) {
