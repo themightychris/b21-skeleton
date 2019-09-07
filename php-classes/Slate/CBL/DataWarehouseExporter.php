@@ -66,7 +66,7 @@ class DataWarehouseExporter
                 'StudentFullName' => null,
 
                 'ID' => 'studenttaskslatepk',
-                'CreatorUsername' => 'teacherassigned', //'teacherstafffk',
+                'CreatorUsername' => 'teacherstafffk',
                 'TaskExperienceType' => 'experiencetype',
                 'SectionTitle' => 'experiencename',
                 'Status' => 'currentstatusoftask',
