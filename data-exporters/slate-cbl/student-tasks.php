@@ -27,6 +27,8 @@ return [
             'students' => 'all',
             'date_after' => null,
             'date_before' => null,
+            'submitted_date_after' => null,
+            'submitted_date_before' => null,
             'term' => null
         ];
 
@@ -54,6 +56,22 @@ return [
             $query['date_before'] = date('Y-m-d H:i:s', $date);
         }
 
+        if (!empty($input['submitted_date_after'])) {
+            if (!$date = strtotime($input['submitted_date_after'])) {
+                throw new RangeException('submitted_date_after could not be parsed as a date');
+            }
+
+            $query['submitted_date_after'] = date('Y-m-d H:i:s', $date);
+        }
+
+        if (!empty($input['submitted_date_before'])) {
+            if (!$date = strtotime($input['submitted_date_before'])) {
+                throw new RangeException('submitted_date_before could not be parsed as a date');
+            }
+
+            $query['submitted_date_before'] = date('Y-m-d H:i:s', $date);
+        }
+
         return $query;
     },
     'buildRows' => function (array $query = [], array $config = []) {
@@ -74,6 +92,10 @@ return [
         // build StudentTask conditions
         $conditions = [];
         $order = [];
+        $dateConditions = [];
+        $joinStatement = '';
+
+        $studentTaskTableAlias = Slate\CBL\Tasks\StudentTask::getTableAlias();
 
         if (count($studentIds)) {
             $conditions['StudentID'] = [ 'values' => $studentIds ];
@@ -81,6 +103,30 @@ return [
         } else {
             $conditions[] = 'FALSE';
         }
+
+        if (!empty($query['date_after']) || !empty($query['date_before'])) {
+            $createdConditions = [];
+            if ($query['date_after'] && $query['date_before']) {
+                $createdConditions['Created'] = [
+                    'operator' => 'BETWEEN',
+                    'min' => $query['date_after'],
+                    'max' => $query['date_before']
+                ];
+            } elseif ($query['date_after']) {
+                $createdConditions['Created'] = [
+                    'operator' => '>=',
+                    'value' => $query['date_after']
+                ];
+            } elseif ($query['date_before']) {
+                $createdConditions['Created'] = [
+                    'operator' => '<=',
+                    'value' => $query['date_before']
+                ];
+            }
+
+            $dateConditions = array_values(Slate\CBL\Tasks\StudentTask::mapConditions($createdConditions, true));
+        }
+
 
         $Term = null;
         if (!empty($query['term'])) {
@@ -102,27 +148,38 @@ return [
                 $taskTableAlias = Slate\CBL\Tasks\Task::getTableAlias();
                 $taskTableName = Slate\CBL\Tasks\Task::$tableName;
 
-                $joinConditions = " JOIN `{$taskTableName}` {$taskTableAlias} ON {$taskTableAlias}.ID = StudentTask.TaskID";
+                $joinStatement .= " JOIN `{$taskTableName}` {$taskTableAlias} ON {$taskTableAlias}.ID = $studentTaskTableAlias.TaskID";
                 $conditions[] =  $taskTableAlias. '.SectionID IN (' . implode($sectionIdsInTerm, ', ') . ')';
             }
         }
 
-        if ($query['date_after'] && $query['date_before']) {
-            $conditions['Created'] = [
-                'operator' => 'BETWEEN',
-                'min' => $query['date_after'],
-                'max' => $query['date_before']
-            ];
-        } elseif ($query['date_after']) {
-            $conditions['Created'] = [
-                'operator' => '>=',
-                'value' => $query['date_after']
-            ];
-        } elseif ($query['date_before']) {
-            $conditions['Created'] = [
-                'operator' => '<=',
-                'value' => $query['date_before']
-            ];
+
+        if (!empty($query['submitted_date_after']) || !empty($query['submitted_date_before'])) {
+            $submissionConditions = [];
+            $submissionTableAlias = Slate\CBL\Tasks\StudentTaskSubmission::getTableAlias();
+            $submissionTableName = Slate\CBL\Tasks\StudentTaskSubmission::$tableName;
+
+            $joinStatement .= " LEFT JOIN `{$submissionTableName}` $submissionTableAlias ON $submissionTableAlias.StudentTaskID = $studentTaskTableAlias.ID ";
+
+            $submissionConditions = [];
+            if ($query['submitted_date_after'] && $query['submitted_date_before']) {
+                $submissionConditions['Created'] = [
+                    'operator' => 'BETWEEN',
+                    'min' => $query['submitted_date_after'],
+                    'max' => $query['submitted_date_before']
+                ];
+            } elseif ($query['submitted_date_after']) {
+                $submissionConditions['Created'] = [
+                    'operator' => '>=',
+                    'value' => $query['submitted_date_after']
+                ];
+            } elseif ($query['submitted_date_before']) {
+                $submissionConditions['Created'] = [
+                    'operator' => '<=',
+                    'value' => $query['submitted_date_before']
+                ];
+            }
+            $dateConditions = array_merge($dateConditions, array_values(Slate\CBL\Tasks\StudentTaskSubmission::mapConditions($submissionConditions, true)));
         }
 
         $order[] = 'ID';
@@ -134,16 +191,18 @@ return [
         // build rows
         $result = DB::query(
             '
-                SELECT StudentTask.*
-                    FROM `%s` StudentTask
-                    %s
-                    WHERE (%s)
-                    ORDER BY %s
+                SELECT %2$s.*
+                    FROM `%1$s` %2$s
+                    %3$s
+                    WHERE ((%4$s) AND ((%5$s)))
+                    ORDER BY %6$s
             ',
             [
                 Slate\CBL\Tasks\StudentTask::$tableName,
-                $Term ? $joinConditions : '',
+                $studentTaskTableAlias,
+                !empty($joinStatement) ? ($joinStatement) : '',
                 count($conditions) ? join(') AND (', $conditions) : 'TRUE',
+                !empty($dateConditions) ? join(') OR (', $dateConditions) : 'TRUE',
                 implode(',', $order)
             ]
         );
