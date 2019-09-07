@@ -64,13 +64,14 @@ class DataWarehouseExporter
             ],
             'headers' => [
                 'StudentFullName' => null,
+                'TermTitle' => null,
 
                 'ID' => 'studenttaskslatepk',
                 'CreatorUsername' => 'teacherstafffk',
                 'TaskExperienceType' => 'experiencetype',
                 'SectionTitle' => 'experiencename',
                 'Status' => 'currentstatusoftask',
-                'TermTitle' => 'term',
+                'TermHandle' => 'term',
                 'SkillCodes' => 'skillscodes'
             ]
         ],
