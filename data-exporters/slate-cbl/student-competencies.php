@@ -135,7 +135,7 @@ return [
                 $demonstrationsAverage = round($StudentCompetency->getDemonstrationsAverage(), 2);
 
                 yield [
-                    'ID' => $StudentComptency->ID,
+                    'ID' => $StudentCompetency->ID,
                     'PersonID' => $Student->ID,
                     'StudentFullName' => $Student->FullName,
                     'StudentNumber' => $Student->StudentNumber,
