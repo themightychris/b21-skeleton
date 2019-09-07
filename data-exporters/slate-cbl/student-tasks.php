@@ -5,6 +5,7 @@ return [
     'description' => 'Each row represents an assignment of a task to a student',
     'filename' => 'student-tasks',
     'headers' => [
+        'ID',
         'StudentFullName' => 'Student',
         'StudentNumber' => 'Student Number',
         'TaskTitle' => 'Task Title',
@@ -174,6 +175,7 @@ return [
             $expirationDate = $StudentTask->ExpirationDate ? date('m/d/Y', $StudentTask->ExpirationDate) : $StudentTask->Task->ExpirationDate ? date('m/d/Y', $StudentTask->Task->ExpirationDate) : null;
 
             yield [
+                'ID' => $StudentTask->ID,
                 'StudentFullName' => $StudentTask->Student->FullName,
                 'StudentNumber' => $StudentTask->Student->StudentNumber,
                 'TaskTitle' => $StudentTask->Task->Title,

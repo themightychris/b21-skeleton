@@ -11,6 +11,7 @@ return [
     'description' => 'Each row represents a demonstration',
     'filename' => 'demonstrations',
     'headers' => [
+        'ID',
         'StudentID',
         'CreatorFullName' => 'Teacher FullName',
         'StudentNumber' => 'Student Number',
@@ -135,6 +136,7 @@ return [
                 }
 
                 $row['Level'] = $demonstrationSkills[$i]->TargetLevel;
+                $row['ID'] = $demonstrationSkills[$i]->ID;
 
                 yield $row;
             }

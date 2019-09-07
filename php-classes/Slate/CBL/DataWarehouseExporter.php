@@ -46,6 +46,7 @@ class DataWarehouseExporter
                 'PersonID' => null,
                 'StudentFullName' => null,
 
+                'ID' => 'studentcompetencyslatepk',
                 'CompetencyCode' => 'competency',
                 'Level' => 'portfolio',
                 'BaselineRating' => 'baseline',
@@ -64,6 +65,7 @@ class DataWarehouseExporter
             'headers' => [
                 'StudentFullName' => null,
 
+                'ID' => 'studenttaskslatepk',
                 'CreatorUsername' => 'teacherassigned', //'teacherstafffk',
                 'TaskExperienceType' => 'experiencetype',
                 'SectionTitle' => 'experiencename',
@@ -89,6 +91,7 @@ class DataWarehouseExporter
                 'CreatorFullName' => null,
                 'StudentFullName' => null,
 
+                'ID' => 'studentratingslatepk',
                 'ArtifactURL' => 'artifact',
                 'Standard' => 'skill',
                 'Portfolio' => 'level',
