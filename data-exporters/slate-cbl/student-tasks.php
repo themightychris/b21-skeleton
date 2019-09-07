@@ -19,7 +19,8 @@ return [
         'SubmittedDate' => 'Submitted date',
         'SkillCodes' => 'Skills Codes',
         'CourseCode' => 'Course Code',
-        'TermTitle' => 'Term'
+        'TermTitle' => 'Term Title',
+        'TermHandle' => 'Term Handle'
     ],
     'readQuery' => function (array $input) {
         $query = [
@@ -82,7 +83,7 @@ return [
         }
 
         $Term = null;
-        if ($query['term']) {
+        if (!empty($query['term'])) {
             if ($query['term'] === 'current') {
                 $Term = Slate\Term::getCurrent();
             } elseif ($query['term'] === 'current-master') {
@@ -191,7 +192,8 @@ return [
                 'AssignedDate' => $assignedDate,
                 'SkillCodes' => implode(', ', $skillCodes),
                 'CourseCode' => $StudentTask->Task->Section->Course->Code,
-                'TermTitle' => $StudentTask->Task->Section->Term->Title
+                'TermTitle' => $StudentTask->Task->Section->Term->Title,
+                'TermHandle' => $StudentTask->Task->Section->Term->Handle
             ];
         }
 
