@@ -97,7 +97,6 @@ class DataWarehouseExporter
                 'Portfolio' => 'level',
                 'PerformanceType' => 'tasktitle',
                 'Context' => 'experiencename',
-                'Created' => 'timestamp',
                 'Level' => 'portfolio',
                 'CreatorUsername' => 'teacherstafffk'
             ]
