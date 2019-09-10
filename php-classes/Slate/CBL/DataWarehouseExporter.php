@@ -104,6 +104,8 @@ class DataWarehouseExporter
         ]
     ];
 
+    protected static $chunkInserts = 5000;
+
     public static function getPdo()
     {
         static $Pdo;
@@ -163,35 +165,23 @@ class DataWarehouseExporter
                     $query = [];
                 }
 
-
                 $results = call_user_func($config['buildRows'], $query, $config);
                 $rows = [];
+
+                static::createBackupTableAndCopyData($Pdo, $scriptCfg);
+                static::truncateOriginalTable($Pdo, $scriptCfg);
+
                 foreach ($results as $row) {
-                    $copiedRow = [];
+                    $rows[] = static::translateRowHeaders($row, $scriptCfg);
 
-                    foreach($row as $column => $value) {
-                        if (!empty($scriptCfg['headers']) && array_key_exists($column, $scriptCfg['headers'])) {
-                            if ($scriptCfg['headers'][$column]) {
-                                $copiedRow[$scriptCfg['headers'][$column]] = $value;
-                            }
-                        } else {
-                            $copiedRow[strtolower($column)] = $value;
-                        }
+                    if (static::$chunkInserts && count($rows) >= static::$chunkInserts) {
+                        static::exportRows($Pdo, $scriptCfg, $rows);
+                        $rows = [];
                     }
-                    $rows[] = $copiedRow;
                 }
 
-                // create backup table and copy data
-                $tempTable = $scriptCfg['table'] . '_bak';
-                $Pdo->nonQuery("CREATE TABLE $schema.{$tempTable} (like $schema.{$scriptCfg['table']} including all);");
-                $Pdo->nonQuery("INSERT INTO $schema.{$tempTable} SELECT * FROM $schema.{$scriptCfg['table']}");
+                static::exportRows($Pdo, $scriptCfg, $rows);
 
-                // truncate original table, and insert rows
-                $Pdo->nonQuery("TRUNCATE TABLE $schema.{$scriptCfg['table']} RESTART IDENTITY;");
-                if (!empty($rows)) {
-                    $Pdo->insertMultiple($scriptCfg['table'], $rows);
-                    unset($rows);
-                }
                 // truncate backup table later
                 $renameTables[$scriptCfg['table']] = $tempTable;
             }
@@ -201,12 +191,55 @@ class DataWarehouseExporter
             DB::resumeQueryLogging();
         }
 
-        foreach ($renameTables as $original => $backup) {
-            // drop backup table
-            $Pdo->nonQuery("DROP TABLE $schema.$backup");
-            // rename table
-            // $Pdo->nonQuery("ALTER TABLE $schema.$original RENAME TO $schema.$backup");
+        static::dropBackupTables($Pdo, $backupTables);
+    }
+
+    protected static function translateRowHeaders(array $row, array $scriptCfg)
+    {
+        $translated = [];
+        foreach($row as $column => $value) {
+            if (!empty($scriptCfg['headers']) && array_key_exists($column, $scriptCfg['headers'])) {
+                if ($scriptCfg['headers'][$column]) {
+                    $translated[$scriptCfg['headers'][$column]] = $value;
+                }
+            } else {
+                $translated[strtolower($column)] = $value;
+            }
         }
+
+        return $translated;
+    }
+
+    protected static function truncateOriginalTable(PostgresConnection $Pdo, array $scriptCfg)
+    {
+        $schema = static::$postgresSchema;
+        // truncate original table, and insert rows
+        $Pdo->nonQuery("TRUNCATE TABLE $schema.{$scriptCfg['table']} RESTART IDENTITY;");
+    }
+
+    protected static function createBackupTableAndCopyData(PostgresConnection $Pdo, array $scriptCfg)
+    {
+        $schema = static::$postgresSchema;
+        // create backup table and copy data
+        $tempTable = $scriptCfg['table'] . '_bak';
+        $Pdo->nonQuery("CREATE TABLE $schema.{$tempTable} (like $schema.{$scriptCfg['table']} including all);");
+        $Pdo->nonQuery("INSERT INTO $schema.{$tempTable} SELECT * FROM $schema.{$scriptCfg['table']}");
+    }
+
+    protected static function dropBackupTables(PostgresConnection $Pdo, array $backupTables)
+    {
+        $schema = static::$postgresSchema;
+        foreach ($backupTables as $original => $backup) {
+            $Pdo->nonQuery("DROP TABLE $schema.$backup");
+        }
+    }
+
+    protected static function exportRows(PostgresConnection $Pdo, array $scriptCfg, array $rows)
+    {
+        if (!empty($rows)) {
+            $Pdo->insertMultiple($scriptCfg['table'], $rows);
+        }
+        unset($rows);
     }
 
 }
