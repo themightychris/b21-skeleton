@@ -191,7 +191,7 @@ class DataWarehouseExporter
             DB::resumeQueryLogging();
         }
 
-        static::dropBackupTables($Pdo, $backupTables);
+        static::dropBackupTables($Pdo, $renameTables);
     }
 
     protected static function translateRowHeaders(array $row, array $scriptCfg)
