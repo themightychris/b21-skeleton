@@ -135,7 +135,7 @@ class DataWarehouseExporter
         ActiveRecord::$useCache = true;
         set_time_limit(0);
 
-        $renameTables = [];
+        $backupTables = [];
 
         try {
             foreach ($exporters as $scriptName => $scriptCfg) {
@@ -168,7 +168,7 @@ class DataWarehouseExporter
                 $results = call_user_func($config['buildRows'], $query, $config);
                 $rows = [];
 
-                static::createBackupTableAndCopyData($Pdo, $scriptCfg);
+                $tempTable = static::createBackupTableAndCopyData($Pdo, $scriptCfg);
                 static::truncateOriginalTable($Pdo, $scriptCfg);
 
                 foreach ($results as $row) {
@@ -183,7 +183,7 @@ class DataWarehouseExporter
                 static::exportRows($Pdo, $scriptCfg, $rows);
 
                 // truncate backup table later
-                $renameTables[$scriptCfg['table']] = $tempTable;
+                $backupTables[$scriptCfg['table']] = $tempTable;
             }
         } catch (\Exception $e) {
             return RequestHandler::throwInvalidRequestError('Unable to complete export: '. $e->getMessage());
@@ -191,7 +191,7 @@ class DataWarehouseExporter
             DB::resumeQueryLogging();
         }
 
-        static::dropBackupTables($Pdo, $renameTables);
+        static::dropBackupTables($Pdo, $backupTables);
     }
 
     protected static function translateRowHeaders(array $row, array $scriptCfg)
@@ -224,12 +224,14 @@ class DataWarehouseExporter
         $tempTable = $scriptCfg['table'] . '_bak';
         $Pdo->nonQuery("CREATE TABLE $schema.{$tempTable} (like $schema.{$scriptCfg['table']} including all);");
         $Pdo->nonQuery("INSERT INTO $schema.{$tempTable} SELECT * FROM $schema.{$scriptCfg['table']}");
+
+        return $tempTable;
     }
 
     protected static function dropBackupTables(PostgresConnection $Pdo, array $backupTables)
     {
         $schema = static::$postgresSchema;
-        foreach ($backupTables as $original => $backup) {
+        foreach ($backupTables as $backup) {
             $Pdo->nonQuery("DROP TABLE $schema.$backup");
         }
     }
