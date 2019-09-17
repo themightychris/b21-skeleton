@@ -9,6 +9,7 @@ Git::$repositories['b21-skeleton'] = [
         'php-config/Slate/CBL/DataWarehouseExporter.config.php',
         'data-exporters',
         'php-classes/Slate/CBL/DataWarehouseExporter.php',
-        'site-tasks/exports/data-warehouse-exporter.php'
+        'site-tasks/exports/data-warehouse-exporter.php',
+        'event-handlers/Slate/CBL/export-data'
     ]
 ];
