@@ -12,4 +12,4 @@ To setup, run the following command in the console:
 printf "10 23 \t* * *\troot\techo /usr/local/bin/emergence-fire-event {site_id} export-data Slate\\CBL > /dev/null\n" | sudo tee /etc/cron.d/slate-cbl-data-export
 ```
 
-Replace the {site_id} with the respective
+Replace the {site_id} with the respective site ID.
