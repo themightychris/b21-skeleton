@@ -72,6 +72,7 @@ return [
                       JOIN `%s` Competency
                         ON Competency.ContentAreaID = ContentArea.ID
                      WHERE ContentArea.Code = "%s"
+                       AND Competency.Code NOT LIKE "OLD%%"
                 ',
                 [
                     Slate\CBL\ContentArea::$tableName,
@@ -84,7 +85,11 @@ return [
                 'values' => array_keys($competencyCodes)
             ];
         } else {
-            $competencyCodes = DB::valuesTable('ID', 'Code', 'SELECT Competency.ID, Competency.Code FROM `%s` Competency', Slate\CBL\Competency::$tableName);
+            $competencyCodes = DB::valuesTable('ID', 'Code', 'SELECT Competency.ID, Competency.Code FROM `%s` Competency WHERE Competency.Code NOT LIKE "OLD%%"', Slate\CBL\Competency::$tableName);
+            $conditions['CompetencyID'] = [
+                'values' => array_keys($competencyCodes),
+                'operator' => 'IN'
+            ];
         }
         natcasesort($competencyCodes);
         $order[] = 'FIELD(StudentCompetency.CompetencyID, '.implode(',', array_keys($competencyCodes)).')';

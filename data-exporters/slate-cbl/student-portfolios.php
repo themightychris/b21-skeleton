@@ -70,11 +70,30 @@ return [
                           JOIN `%s` Competency
                             ON Competency.ContentAreaID = ContentArea.ID
                          WHERE ContentArea.Code = "%s"
+                          AND Competency.Code NOT LIKE "OLD%%"
                     ',
                     [
                         Slate\CBL\ContentArea::$tableName,
                         Slate\CBL\Competency::$tableName,
                         DB::escape($query['content_area'])
+                    ]
+                )
+            ];
+        } else {
+            $conditions['CompetencyID'] = [
+                'operator' => 'NOT IN',
+                'values' => DB::allValues(
+                    'ID',
+                    '
+                        SELECT Competency.ID
+                          FROM `%s` ContentArea
+                          JOIN `%s` Competency
+                            ON Competency.ContentAreaID = ContentArea.ID
+                         WHERE Competency.Code LIKE "OLD%%"
+                    ',
+                    [
+                        Slate\CBL\ContentArea::$tableName,
+                        Slate\CBL\Competency::$tableName
                     ]
                 )
             ];
