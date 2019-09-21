@@ -132,22 +132,39 @@ return [
 
 
         $Term = null;
+        $termIds = [];
         if (!empty($query['term'])) {
             if ($query['term'] === 'current') {
-                $Term = Slate\Term::getCurrent();
+                $termIds[] = Slate\Term::getCurrent() ? Slate\Term::getCurrent()->ID : 0;
             } elseif ($query['term'] === 'current-master') {
                 $Term = Slate\Term::getCurrent();
-                $Term = $Term ? $Term->getMaster() : null;
+                if ($Term) {
+                    $termIds[] = $Term->ID;
+                    if ($Term->getMaster() && $Term != $Term->getMaster()) {
+                        $termIds[] = $Term->getMaster()->ID;
+                    }
+                }
             } else {
                 $Term = Slate\Term::getByHandle($query['term']);
+                if ($Term) {
+                    $termIds[] = $Term->ID;
+                }
             }
 
-            if ($Term) {
+            if (!empty($termIds)) {
                 $sectionIdsInTerm = array_map(function($S) {
                     return $S->ID;
                 }, Slate\Courses\Section::getAllByWhere([
-                    'TermID' => $Term->ID
+                    'TermID' => [
+                        'operator' => 'IN',
+                        'values' => $termIds
+                    ]
                 ]));
+
+                if (empty($sectionIdsInTerm)) {
+                    $sectionIdsInTerm = [0];
+                }
+
                 $taskTableAlias = Slate\CBL\Tasks\Task::getTableAlias();
                 $taskTableName = Slate\CBL\Tasks\Task::$tableName;
 
