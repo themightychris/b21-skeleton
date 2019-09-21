@@ -98,7 +98,10 @@ return [
         $studentTaskTableAlias = Slate\CBL\Tasks\StudentTask::getTableAlias();
 
         if (count($studentIds)) {
-            $conditions['StudentID'] = [ 'values' => $studentIds ];
+            $conditions['StudentID'] = [
+                'values' => $studentIds,
+                'operator' => 'IN'
+            ];
             $order[] = 'FIELD(StudentID, '.implode(',', $studentIds).')';
         } else {
             $conditions[] = 'FALSE';
