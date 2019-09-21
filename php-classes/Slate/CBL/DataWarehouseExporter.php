@@ -180,7 +180,10 @@ class DataWarehouseExporter
                     }
                 }
 
+                if (count($rows)) {
                 static::exportRows($Pdo, $scriptCfg, $rows);
+                    $rows = null;
+                }
 
                 // truncate backup table later
                 $backupTables[$scriptCfg['table']] = $tempTable;
