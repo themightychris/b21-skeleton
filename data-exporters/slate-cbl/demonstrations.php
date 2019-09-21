@@ -39,11 +39,11 @@ return [
         if (!empty($input['term'])) {
             if ($input['term'] === 'current') {
                 $Term = Slate\Term::getCurrent();
-            } elseif ($query['term'] === 'current-master') {
+            } elseif ($input['term'] === 'current-master') {
                 $Term = Slate\Term::getCurrent();
                 $Term = $Term ? $Term->getMaster() : null;
             } else {
-                $Term = Slate\Term::getByHandle($query['term']);
+                $Term = Slate\Term::getByHandle($input['term']);
             }
 
             if ($Term) {
