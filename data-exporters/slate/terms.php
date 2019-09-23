@@ -14,17 +14,45 @@ return [
         'TermType' => 'Term Type'
     ],
     'readQuery' => function (array $input) {
-        $query = [];
+        $query = [
+            'master-term' => null
+        ];
+
+        if (!empty($input['master-term'])) {
+            if ($input['master-term'] === 'current') {
+                $Term = Slate\Term::getCurrent();
+            } elseif ($input['master-term'] === 'current-master') {
+                $Term = Slate\Term::getCurrent();
+                $Term = $Term ? $Term->getMaster() : null;
+            } else {
+                $Term = Slate\Term::getByHandle($input['master-term']);
+            }
+
+            if (!$Term) {
+                throw new RangeException('master-term could not be found');
+            }
+
+            $query['master-term'] = $Term;
+        }
 
         return $query;
     },
     'buildRows' => function (array $query = [], array $config = []) {
-
-        // build students list
-        $terms = Term::getAll();
-
         // build Term conditions
         $conditions = [];
+
+        if (!empty($query['master-term'])) {
+            $MasterTerm = $query['master-term'];
+            $conditions['Left'] = [
+                'value' => $MasterTerm->Left,
+                'operator' => '>='
+            ];
+            $conditions['Right'] = [
+                'value' => $MasterTerm->Right,
+                'operator' => '<='
+            ];
+        }
+
         $order = [
             'ID'
         ];
