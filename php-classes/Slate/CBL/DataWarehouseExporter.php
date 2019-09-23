@@ -77,7 +77,9 @@ class DataWarehouseExporter
         ],
         'slate/terms' => [
             'table' => 'learningcycle',
-            'query' => [],
+            'query' => [
+                'master-term' => 'current-master'
+            ],
             'headers' => [
                 'Title' => 'term'
             ]
