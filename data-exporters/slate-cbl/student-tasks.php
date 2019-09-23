@@ -36,8 +36,31 @@ return [
             $query['students'] = $input['students'];
         }
 
+        // Term currently overrides {submitted_}date_{before|after} input
+        $Term = null;
         if (!empty($input['term'])) {
-            $query['term'] = $input['term'];
+            if ($input['term'] === 'current') {
+                $Term = Slate\Term::getCurrent();
+            } elseif ($input['term'] === 'current-master') {
+                $Term = Slate\Term::getCurrent();
+                $Term = $Term ? $Term->getMaster() : null;
+            } else {
+                $Term = Slate\Term::getByHandle($input['term']);
+            }
+
+            if (!$Term) {
+                throw new RangeException('term could not be found');
+            }
+
+            $query['term'] = $Term;
+            $query['date_after'] = $Term->StartDate;
+            $query['date_before'] = $Term->EndDate;
+            $query['submitted_date_after'] = $Term->StartDate;
+            $query['submitted_date_before'] = $Term->EndDate;
+            unset($input['date_after']);
+            unset($input['date_before']);
+            unset($input['submitted_date_after']);
+            unset($input['submitted_date_before']);
         }
 
         if (!empty($input['date_after'])) {
@@ -130,50 +153,6 @@ return [
             $dateConditions = array_values(Slate\CBL\Tasks\StudentTask::mapConditions($createdConditions, true));
         }
 
-
-        $Term = null;
-        $termIds = [];
-        if (!empty($query['term'])) {
-            if ($query['term'] === 'current') {
-                $termIds[] = Slate\Term::getCurrent() ? Slate\Term::getCurrent()->ID : 0;
-            } elseif ($query['term'] === 'current-master') {
-                $Term = Slate\Term::getCurrent();
-                if ($Term) {
-                    $termIds[] = $Term->ID;
-                    if ($Term->getMaster() && $Term != $Term->getMaster()) {
-                        $termIds[] = $Term->getMaster()->ID;
-                    }
-                }
-            } else {
-                $Term = Slate\Term::getByHandle($query['term']);
-                if ($Term) {
-                    $termIds[] = $Term->ID;
-                }
-            }
-
-            if (!empty($termIds)) {
-                $sectionIdsInTerm = array_map(function($S) {
-                    return $S->ID;
-                }, Slate\Courses\Section::getAllByWhere([
-                    'TermID' => [
-                        'operator' => 'IN',
-                        'values' => $termIds
-                    ]
-                ]));
-
-                if (empty($sectionIdsInTerm)) {
-                    $sectionIdsInTerm = [0];
-                }
-
-                $taskTableAlias = Slate\CBL\Tasks\Task::getTableAlias();
-                $taskTableName = Slate\CBL\Tasks\Task::$tableName;
-
-                $joinStatement .= " JOIN `{$taskTableName}` {$taskTableAlias} ON {$taskTableAlias}.ID = $studentTaskTableAlias.TaskID";
-                $conditions[] =  $taskTableAlias. '.SectionID IN (' . implode($sectionIdsInTerm, ', ') . ')';
-            }
-        }
-
-
         if (!empty($query['submitted_date_after']) || !empty($query['submitted_date_before'])) {
             $submissionConditions = [];
             $submissionTableAlias = Slate\CBL\Tasks\StudentTaskSubmission::getTableAlias();
@@ -211,7 +190,7 @@ return [
         // build rows
         $result = DB::query(
             '
-                SELECT %2$s.*
+                SELECT DISTINCT %2$s.*
                     FROM `%1$s` %2$s
                     %3$s
                     WHERE ((%4$s) AND ((%5$s)))
