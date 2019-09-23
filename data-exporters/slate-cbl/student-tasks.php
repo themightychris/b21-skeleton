@@ -211,7 +211,9 @@ return [
             $submissionTimestamp = $StudentTask->getSubmissionTimestamp();
 
             // start with list of skill codes for task, cached between records
-            if (!$skillCodes = $taskSkillCodes[$studentTask->TaskID]) {
+            if (isset($taskSkillCodes[$StudentTask->TaskID])) {
+                $skillCodes = $taskSkillCodes[$StudentTask->TaskID];
+            } else {
                 $skillCodes = [];
 
                 foreach ($StudentTask->Task->Skills as $Skill) {
