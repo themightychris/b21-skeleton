@@ -168,22 +168,27 @@ class DataWarehouseExporter
                 }
 
                 $results = call_user_func($config['buildRows'], $query, $config);
+
+                $rowColumns = [];
                 $rows = [];
 
                 $tempTable = static::createBackupTableAndCopyData($Pdo, $scriptCfg);
                 static::truncateOriginalTable($Pdo, $scriptCfg);
 
                 foreach ($results as $row) {
-                    $rows[] = static::translateRowHeaders($row, $scriptCfg);
+                    if (empty($rowColumns)) {
+                        $rowColumns = static::generateRowColumnsSQL($Pdo, static::translateRowHeaders($row, $scriptCfg));
+                    }
+                    $rows[] = static::generateRowSQL($Pdo, static::translateRowHeaders($row, $scriptCfg));
 
                     if (static::$chunkInserts && count($rows) >= static::$chunkInserts) {
-                        static::exportRows($Pdo, $scriptCfg, $rows);
+                        static::exportRows($Pdo, $scriptCfg, $rowColumns, $rows);
                         $rows = [];
                     }
                 }
 
                 if (count($rows)) {
-                static::exportRows($Pdo, $scriptCfg, $rows);
+                    static::exportRows($Pdo, $scriptCfg, $rowColumns, $rows);
                     $rows = null;
                 }
 
@@ -197,6 +202,16 @@ class DataWarehouseExporter
         }
 
         static::dropBackupTables($Pdo, $backupTables);
+    }
+
+    protected static function generateRowColumnsSQL(PostgresConnection $Pdo, array $record)
+    {
+        return ' (' . implode(',', array_map([$Pdo, 'quoteIdentifier'], array_keys($record))) . ')';
+    }
+
+    protected static function generateRowSQL(PostgresConnection $Pdo, array $record)
+    {
+        return '('. implode(', ', array_map([$Pdo, 'quoteValue'], array_values($record))).')';
     }
 
     protected static function translateRowHeaders(array $row, array $scriptCfg)
@@ -241,12 +256,18 @@ class DataWarehouseExporter
         }
     }
 
-    protected static function exportRows(PostgresConnection $Pdo, array $scriptCfg, array $rows)
+    protected static function exportRows(PostgresConnection $Pdo, array $scriptCfg, $rowColumns, array $rows)
     {
+        $query = '';
+
         if (!empty($rows)) {
-            $Pdo->insertMultiple($scriptCfg['table'], $rows);
+            $query .= 'INSERT INTO ' . $Pdo->quoteIdentifier($scriptCfg['table']);
+            $query .= ' ';
+            $query .= $rowColumns;
+            $query .= ' VALUES ';
+
+            $Pdo->nonQuery($query . implode(', ', $rows));
         }
-        unset($rows);
     }
 
 }
