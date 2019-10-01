@@ -10,11 +10,6 @@ Git::$repositories['b21-skeleton'] = [
         'data-exporters',
         'php-classes/Slate/CBL/DataWarehouseExporter.php',
         'site-tasks/exports/data-warehouse-exporter.php',
-        'event-handlers/Slate/CBL/export-data',
-
-        // overrides needed for CLI automation
-        'php-classes/ActiveRecord.class.php',
-        'php-classes/Slate/UI/Adapters/User.php',
-        'php-classes/Slate/CBL/Tasks/StudentTask.php'
+        'event-handlers/Slate/CBL/export-data'
     ]
 ];
