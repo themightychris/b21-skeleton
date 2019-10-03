@@ -2,7 +2,8 @@
 
 namespace Slate\Connectors\DataWarehouse;
 
-use LogLevel;
+use Emergence\Connectors\IJob;
+use Psr\Log\LogLevel;
 use Slate\CBL\DataWarehouseExporter as DataWarehouse;
 
 class Connector extends \Emergence\Connectors\AbstractConnector implements \Emergence\Connectors\ISynchronize
