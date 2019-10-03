@@ -106,7 +106,7 @@ class DataWarehouseExporter
         ]
     ];
 
-    protected static $chunkInserts = 5000;
+    public static $chunkInserts = 5000;
 
     public static function getPdo()
     {
@@ -126,95 +126,21 @@ class DataWarehouseExporter
         return $Pdo;
     }
 
-    public static function exportData()
+    public static function exportRows(PostgresConnection $Pdo, array $scriptCfg, $rowColumns, array $rows)
     {
+        $query = '';
 
-        $Pdo = static::getPdo();
-        $exporters = static::$exporters;
-        $schema = static::$postgresSchema;
+        if (!empty($rows)) {
+            $query .= 'INSERT INTO ' . $Pdo->quoteIdentifier($scriptCfg['table']);
+            $query .= ' ';
+            $query .= $rowColumns;
+            $query .= ' VALUES ';
 
-        DB::suspendQueryLogging();
-        ActiveRecord::$useCache = true;
-        set_time_limit(0);
-
-        $backupTables = [];
-
-        try {
-            foreach ($exporters as $scriptName => $scriptCfg) {
-                $scriptNode = Site::resolvePath("data-exporters/{$scriptName}.php");
-
-                if (!$scriptNode) {
-                    throw Exception("Script $scriptPath was not found.");
-                }
-
-                // load config
-                $config = include($scriptNode->RealPath);
-
-                // check config
-                if (empty($config['buildRows']) || !is_callable($config['buildRows'])) {
-                    throw new Exception("Script $scriptPath does not have a callable buildRows method");
-                }
-
-                if (empty($config['headers']) || !is_array($config['headers'])) {
-                    throw new Exception("Script $scriptPath does not have a headers array");
-                }
-
-                // read query
-                if (is_callable($config['readQuery'])) {
-                    $query = call_user_func($config['readQuery'], $scriptCfg['query'], $config);
-                    ksort($query);
-                } else {
-                    $query = [];
-                }
-
-                $results = call_user_func($config['buildRows'], $query, $config);
-
-                $rowColumns = [];
-                $rows = [];
-
-                $tempTable = static::createBackupTableAndCopyData($Pdo, $scriptCfg);
-                static::truncateOriginalTable($Pdo, $scriptCfg);
-
-                foreach ($results as $row) {
-                    if (empty($rowColumns)) {
-                        $rowColumns = static::generateRowColumnsSQL($Pdo, static::translateRowHeaders($row, $scriptCfg));
-                    }
-                    $rows[] = static::generateRowSQL($Pdo, static::translateRowHeaders($row, $scriptCfg));
-
-                    if (static::$chunkInserts && count($rows) >= static::$chunkInserts) {
-                        static::exportRows($Pdo, $scriptCfg, $rowColumns, $rows);
-                        $rows = [];
-                    }
-                }
-
-                if (count($rows)) {
-                    static::exportRows($Pdo, $scriptCfg, $rowColumns, $rows);
-                    $rows = null;
-                }
-
-                // truncate backup table later
-                $backupTables[$scriptCfg['table']] = $tempTable;
-            }
-        } catch (\Exception $e) {
-            return RequestHandler::throwInvalidRequestError('Unable to complete export: '. $e->getMessage());
-        } finally {
-            DB::resumeQueryLogging();
+            $Pdo->nonQuery($query . implode(', ', $rows));
         }
-
-        static::dropBackupTables($Pdo, $backupTables);
     }
 
-    protected static function generateRowColumnsSQL(PostgresConnection $Pdo, array $record)
-    {
-        return ' (' . implode(',', array_map([$Pdo, 'quoteIdentifier'], array_keys($record))) . ')';
-    }
-
-    protected static function generateRowSQL(PostgresConnection $Pdo, array $record)
-    {
-        return '('. implode(', ', array_map([$Pdo, 'quoteValue'], array_values($record))).')';
-    }
-
-    protected static function translateRowHeaders(array $row, array $scriptCfg)
+    public static function translateRowHeaders(array $row, array $scriptCfg)
     {
         $translated = [];
         foreach($row as $column => $value) {
@@ -230,14 +156,17 @@ class DataWarehouseExporter
         return $translated;
     }
 
-    protected static function truncateOriginalTable(PostgresConnection $Pdo, array $scriptCfg)
+    public static function generateRowColumnsSQL(PostgresConnection $Pdo, array $record)
     {
-        $schema = static::$postgresSchema;
-        // truncate original table, and insert rows
-        $Pdo->nonQuery("TRUNCATE TABLE $schema.{$scriptCfg['table']} RESTART IDENTITY;");
+        return ' (' . implode(',', array_map([$Pdo, 'quoteIdentifier'], array_keys($record))) . ')';
     }
 
-    protected static function createBackupTableAndCopyData(PostgresConnection $Pdo, array $scriptCfg)
+    public static function generateRowSQL(PostgresConnection $Pdo, array $record)
+    {
+        return '('. implode(', ', array_map([$Pdo, 'quoteValue'], array_values($record))).')';
+    }
+
+    public static function createBackupTableAndCopyData(PostgresConnection $Pdo, array $scriptCfg)
     {
         $schema = static::$postgresSchema;
         // create backup table and copy data
@@ -248,25 +177,18 @@ class DataWarehouseExporter
         return $tempTable;
     }
 
-    protected static function dropBackupTables(PostgresConnection $Pdo, array $backupTables)
+    public static function truncateOriginalTable(PostgresConnection $Pdo, array $scriptCfg)
+    {
+        $schema = static::$postgresSchema;
+        // truncate original table, and insert rows
+        $Pdo->nonQuery("TRUNCATE TABLE $schema.{$scriptCfg['table']} RESTART IDENTITY;");
+    }
+
+    public static function dropBackupTables(PostgresConnection $Pdo, array $backupTables)
     {
         $schema = static::$postgresSchema;
         foreach ($backupTables as $backup) {
             $Pdo->nonQuery("DROP TABLE $schema.$backup");
-        }
-    }
-
-    protected static function exportRows(PostgresConnection $Pdo, array $scriptCfg, $rowColumns, array $rows)
-    {
-        $query = '';
-
-        if (!empty($rows)) {
-            $query .= 'INSERT INTO ' . $Pdo->quoteIdentifier($scriptCfg['table']);
-            $query .= ' ';
-            $query .= $rowColumns;
-            $query .= ' VALUES ';
-
-            $Pdo->nonQuery($query . implode(', ', $rows));
         }
     }
 
