@@ -3,14 +3,8 @@
 $Job = \Emergence\Connectors\Job::create([
     'Connector' => \Slate\Connectors\DataWarehouse\Connector::class,
     'Config' => [
-        'Pdo' => \Slate\CBL\DataWarehouseExporter::getPdo(),
-        'exports' => [
-            'slate/terms',
-            'slate-cbl/demonstrations',
-            'slate-cbl/student-competencies',
-            'slate-cbl/student-portfolios',
-            'slate-cbl/student-tasks'
-        ]
+        'Pdo' => \Slate\Connectors\DataWarehouse\Connector::getPdo(),
+        'exports' => \Slate\Connectors\DataWarehouse\Connector::$exports
     ]
 ]);
 
