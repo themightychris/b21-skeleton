@@ -42,7 +42,7 @@
 				Exports
 			    <span class="hint">Check to export to data warehouse.</span>
 			</p>
-			{$exports = \Slate\CBL\DataWarehouseExporter::$exporters}
+			{$exports = \Slate\Connectors\DataWarehouse\Connector::$exports}
             {foreach from=$exports key=path item=cfg implode="<br>"}
                 <label>
                     {$path}
