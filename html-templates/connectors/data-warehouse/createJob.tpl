@@ -39,14 +39,16 @@
     			<span class="hint">Email recipient or list of recipients to send post-sync report to</span>
     		</p>
         	<p>
-    			<label>
-    				Exports
-                    {foreach from=\Slate\CBL\DataWarehouse::$exporters key=path item=exportCfg}
-    				    <input type="checkbox" name="exports[]" value="{$path}" {refill field=exports checked="$path" default="$path"}>
-                    {/foreach}
-    			</label>
-    			<span class="hint">Check to export to data warehouse.</span>
-    		</p>
+				Exports
+			    <span class="hint">Check to export to data warehouse.</span>
+			</p>
+			{$exports = \Slate\CBL\DataWarehouseExporter::$exporters}
+            {foreach from=$exports key=path item=cfg implode="<br>"}
+                <label>
+                    {$path}
+			        <input type="checkbox" name="exports[]" value="{$path}" {refill field=exports checked="$path" default="$path"}>
+		        </label>
+            {/foreach}
         </fieldset>
 
 		<input type="submit" value="Synchronize">
