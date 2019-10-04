@@ -2,6 +2,8 @@
 
 namespace Slate\Connectors\DataWarehouse;
 
+use ActiveRecord, DB, Site;
+
 use Emergence\Connectors\IJob;
 use Psr\Log\LogLevel;
 use Slate\CBL\DataWarehouseExporter as DataWarehouse;
@@ -79,11 +81,22 @@ class Connector extends \Emergence\Connectors\AbstractConnector implements \Emer
 
             $exportScriptConfig = $configuredExports[$exportScript];
             $results[$exportScript] = static::pushExport($Job, $exportScript, $exportScriptConfig, $pretend);
-            $backupTables[] = $results['tempTable'];
+            $backupTables[] = $results[$exportScript]['tempTable'];
         }
 
         DB::resumeQueryLogging();
-        DataWarehouse::dropBackupTables($Job->Config['Pdo'], $backupTables);
+
+        if (!$pretend) {
+            DataWarehouse::dropBackupTables($Job->Config['Pdo'], $backupTables);
+        }
+
+        $Job->log(
+            LogLevel::DEBUG,
+            'Deleted backup tables',
+            [
+                'backupTables' => $backupTables
+            ]
+        );
 
         return $results;
     }
@@ -124,22 +137,32 @@ class Connector extends \Emergence\Connectors\AbstractConnector implements \Emer
 
         $Pdo = $Job->Config['Pdo'];
 
-        $tempTable = DataWarehouse::createBackupTableAndCopyData($Pdo, $scriptConfig);
+        if (!$pretend) {
+            $tempTable = DataWarehouse::createBackupTableAndCopyData($Pdo, $scriptConfig);
+        } else {
+            $tempTable = $scriptConfig['table'] . '_bak';
+        }
+
         $Job->log(
-            LogLevel::INFO,
-            'Created backup table "{backupTableName}" for {tableName}',
+            LogLevel::DEBUG,
+            'Created backup table "{backupTableName}" for {tableName} {pretendMode}',
             [
                 'tableName' => $scriptConfig['table'],
-                'backupTableName' => $tempTable
+                'backupTableName' => $tempTable,
+                'pretendMode' => $pretend ? '(pretend-mode)' : ''
             ]
         );
 
-        DataWarehouse::truncateOriginalTable($Pdo, $scriptConfig);
+        if (!$pretend) {
+            DataWarehouse::truncateOriginalTable($Pdo, $scriptConfig);
+        }
+
         $Job->log(
             LogLevel::DEBUG,
-            'Truncated original table {tableName}',
+            'Truncated original table {tableName} {pretendMode}',
             [
-                'tableName' => $scriptConfig['table']
+                'tableName' => $scriptConfig['table'],
+                'pretendMode' => $pretend ? '(pretend-mode)' : ''
             ]
         );
 
@@ -172,10 +195,11 @@ class Connector extends \Emergence\Connectors\AbstractConnector implements \Emer
 
         $Job->log(
             LogLevel::INFO,
-            'Exported a total of #{totalRowsExported} to table {tableName}',
+            'Exported a total of {totalRowsExported} record(s) to table {tableName} {pretendMode}',
             [
                 'totalRowsExported' => $results['exported'],
-                'tableName' => $scriptConfig['table']
+                'tableName' => $scriptConfig['table'],
+                'pretendMode' => $pretend ? '(pretend-mode)' : ''
             ]
         );
 
