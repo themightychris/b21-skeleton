@@ -117,7 +117,6 @@ class Connector extends \Emergence\Connectors\AbstractConnector implements \Emer
     {
         $config = parent::_getJobConfig($requestData);
 
-        $config['Pdo'] = static::getPdo();
         $config['exports'] = $requestData['exports'];
 
         return $config;
@@ -185,7 +184,7 @@ class Connector extends \Emergence\Connectors\AbstractConnector implements \Emer
         DB::resumeQueryLogging();
 
         if (!$pretend) {
-            static::dropBackupTables($Job->Config['Pdo'], $backupTables);
+            static::dropBackupTables(static::getPdo(), $backupTables);
         }
 
         $Job->log(
@@ -233,7 +232,7 @@ class Connector extends \Emergence\Connectors\AbstractConnector implements \Emer
         $rowColumns = [];
         $rows = [];
 
-        $Pdo = $Job->Config['Pdo'];
+        $Pdo = static::getPdo();
 
         if (!$pretend) {
             $tempTable = static::createBackupTableAndCopyData($Pdo, $scriptConfig);
