@@ -29,7 +29,9 @@ return [
             'date_before' => null,
             'submitted_date_after' => null,
             'submitted_date_before' => null,
-            'term' => null
+            'term' => null,
+            'created_within_term' => true,
+            'submitted_within_term' => true
         ];
 
         if (!empty($input['students'])) {
@@ -53,14 +55,36 @@ return [
             }
 
             $query['term'] = $Term;
-            $query['date_after'] = $Term->StartDate;
-            $query['date_before'] = $Term->EndDate;
-            $query['submitted_date_after'] = $Term->StartDate;
-            $query['submitted_date_before'] = $Term->EndDate;
-            unset($input['date_after']);
-            unset($input['date_before']);
-            unset($input['submitted_date_after']);
-            unset($input['submitted_date_before']);
+
+            if (isset($input['created_within_term'])) {
+                $created_within_term = $input['created_within_term'];
+            } else { // default
+                $created_within_term = $query['submitted_within_term'];
+            }
+
+            if (isset($input['submitted_within_term'])) {
+                $submitted_within_term = $input['submitted_within_term'];
+            } else {
+                $submitted_within_term = $query['submitted_within_term'];
+            }
+
+            if (empty($created_within_term) && empty($submitted_within_term)) {
+                throw new RangeException('created_within_term or submitted_within_term must be selected with term filter');
+            }
+
+            if (!empty($created_within_term)) {
+                $query['date_after'] = $Term->StartDate;
+                $query['date_before'] = $Term->EndDate;
+                unset($input['date_after']);
+                unset($input['date_before']);
+            }
+
+            if (!empty($submitted_within_term)) {
+                $query['submitted_date_after'] = $Term->StartDate;
+                $query['submitted_date_before'] = $Term->EndDate;
+                unset($input['submitted_date_after']);
+                unset($input['submitted_date_before']);
+            }
         }
 
         if (!empty($input['date_after'])) {
@@ -193,7 +217,8 @@ return [
                 SELECT DISTINCT %2$s.*
                     FROM `%1$s` %2$s
                     %3$s
-                    WHERE ((%4$s) AND ((%5$s)))
+                    WHERE ((%4$s)
+                      AND ((%5$s)))
                     ORDER BY %6$s
             ',
             [
