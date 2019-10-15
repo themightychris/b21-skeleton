@@ -52,6 +52,10 @@ return [
             }
         }
 
+        if (!empty($input['students'])) {
+            $query['students'] = $input['students'];
+        }
+
         return $query;
     },
     'buildRows' => function (array $query = [], array $config = []) {
