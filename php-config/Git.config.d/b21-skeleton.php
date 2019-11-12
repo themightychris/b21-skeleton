@@ -6,11 +6,19 @@ Git::$repositories['b21-skeleton'] = [
     'workingBranch' => 'master',
     'trees' => [
         'php-config/Git.config.d/b21-skeleton.php',
-        'php-config/Slate/CBL/DataWarehouseExporter.config.php',
+        'php-config/Slate/Connectors/DataWarehouse/Connector.php',
+
         'data-exporters',
-        'php-classes/Slate/CBL/DataWarehouseExporter.php',
-        'site-tasks/exports/data-warehouse-exporter.php',
+
         'event-handlers/Slate/CBL/export-data',
+
+        'html-templates/connectors/data-warehouse',
+
+        'php-classes/Slate/Connectors/DataWarehouse/Connector.php',
+
+        'site-tasks/exports/data-warehouse-exporter.php',
+
+        'site-root/connectors/data-warehouse.php',
 
         // overrides needed for CLI automation
         'php-classes/ActiveRecord.class.php',
