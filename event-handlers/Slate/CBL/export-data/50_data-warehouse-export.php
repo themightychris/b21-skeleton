@@ -3,7 +3,7 @@
 $Job = \Slate\Connectors\Job::create([
     'Connector' => \Slate\Connectors\DataWarehouse\Connector::class,
     'Config' => [
-        'exports' => \Slate\Connectors\DataWarehouse\Connector::$exports
+        'exports' => array_keys(\Slate\Connectors\DataWarehouse\Connector::$exports)
     ]
 ]);
 
