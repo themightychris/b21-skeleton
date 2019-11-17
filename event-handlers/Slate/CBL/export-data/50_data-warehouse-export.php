@@ -1,6 +1,6 @@
 <?php
 
-$Job = \Emergence\Connectors\Job::create([
+$Job = \Slate\Connectors\Job::create([
     'Connector' => \Slate\Connectors\DataWarehouse\Connector::class,
     'Config' => [
         'exports' => \Slate\Connectors\DataWarehouse\Connector::$exports
