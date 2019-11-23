@@ -32,7 +32,8 @@ return [
         $query = [
             'students' => 'all',
             'from' => null,
-            'to' => null
+            'to' => null,
+            'term' => null
         ];
 
         $Term = null;
@@ -50,10 +51,9 @@ return [
                 $query['from'] = $Term->StartDate;
                 $query['to'] = $Term->EndDate;
             }
-        }
-
-        if (!empty($input['students'])) {
-            $query['students'] = $input['students'];
+        } else if (!empty($input['to']) || !empty($input['from'])) {
+            $query['to'] = $input['to'] ?: null;
+            $query['from'] = $input['from'] ?: null;
         }
 
         return $query;
