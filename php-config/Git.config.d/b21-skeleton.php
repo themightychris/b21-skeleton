@@ -18,7 +18,6 @@ Git::$repositories['b21-skeleton'] = [
 
         'site-root/connectors/data-warehouse.php',
 
-        'site-tasks/exports/data-warehouse-exporter.php',
         'event-handlers/Slate/CBL/export-data'
     ]
 ];
