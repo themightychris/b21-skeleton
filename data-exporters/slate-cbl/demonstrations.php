@@ -31,8 +31,8 @@ return [
     'readQuery' => function (array $input) {
         $query = [
             'students' => 'all',
-            'from' => null,
-            'to' => null,
+            'date_from' => null,
+            'date_to' => null,
             'term' => null
         ];
 
@@ -48,12 +48,12 @@ return [
             }
 
             if ($Term) {
-                $query['from'] = $Term->StartDate;
-                $query['to'] = $Term->EndDate;
+                $query['date_from'] = $Term->StartDate;
+                $query['date_to'] = $Term->EndDate;
             }
-        } else if (!empty($input['to']) || !empty($input['from'])) {
-            $query['to'] = $input['to'] ?: null;
-            $query['from'] = $input['from'] ?: null;
+        } else if (!empty($input['date_to']) || !empty($input['date_from'])) {
+            $query['date_to'] = $input['date_to'] ?: null;
+            $query['date_from'] = $input['date_from'] ?: null;
         }
 
         return $query;
@@ -78,8 +78,8 @@ return [
 
         $format = 'Y-m-d H:i:s';
 
-        $from = $query['from'] ? date($format, strtotime($query['from'])) : null;
-        $to = $query['to'] ? date($format, strtotime($query['to'])) : null;
+        $from = $query['date_from'] ? date($format, strtotime($query['date_from'])) : null;
+        $to = $query['date_to'] ? date($format, strtotime($query['date_to'])) : null;
 
         if ($from && $to) {
             $demonstrationConditions[] = sprintf('Demonstrated BETWEEN "%s" AND "%s"', $from, $to);
