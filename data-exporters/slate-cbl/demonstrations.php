@@ -36,6 +36,10 @@ return [
             'term' => null
         ];
 
+        if (!empty($input['students'])) {
+            $query['students'] = $input['students'];
+        }
+
         $Term = null;
         if (!empty($input['term'])) {
             if ($input['term'] === 'current') {
