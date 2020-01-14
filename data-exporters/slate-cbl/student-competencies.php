@@ -137,7 +137,7 @@ return [
                 $StudentCompetency = Slate\CBL\StudentCompetency::instantiateRecord($record);
                 $demonstrationsComplete = $StudentCompetency->getDemonstrationsComplete();
                 $demonstrationsRequired = $StudentCompetency->getDemonstrationsRequired();
-                $demonstrationsAverage = round($StudentCompetency->getDemonstrationsAverage(), 2);
+                $demonstrationsAverage = round($StudentCompetency->getDemonstrationsAverage(), 1);
 
                 yield [
                     'ID' => $StudentCompetency->ID,
@@ -146,9 +146,9 @@ return [
                     'StudentNumber' => $Student->StudentNumber,
                     'CompetencyCode' => $StudentCompetency->Competency->Code,
                     'Level' => $StudentCompetency->Level,
-                    'BaselineRating' => $StudentCompetency->BaselineRating,
+                    'BaselineRating' => round($StudentCompetency->BaselineRating, 1),
                     'DemonstrationsAverage' => $demonstrationsAverage ?: null,
-                    'Growth' => round($StudentCompetency->getGrowth(), 2) ?: null,
+                    'Growth' => round($StudentCompetency->getGrowth(), 1) ?: null,
                     'Progress' => ($demonstrationsRequired ? $demonstrationsComplete/$demonstrationsRequired : 1),
                     'DemonstrationsRequired' => $demonstrationsRequired,
                     'DemonstrationsComplete' => $demonstrationsComplete,
