@@ -1,0 +1,11 @@
+[holomapping]
+files = [
+    "package.json",
+    "package-lock.json",
+    "cypress.json",
+    "cypress/**",
+
+    # ignore fixtures submodule
+    "!cypress/fixtures/database"
+]
+before = "*"
