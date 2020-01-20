@@ -2,5 +2,4 @@
 
 namespace Slate\CBL;
 
-
-StudentCompetency::$growthCalculationClass = Calculators\Growth\PerformanceLevelMinusBaseline::class;
+StudentCompetency::$growthCalculatorClass = Calculators\Growth\PerformanceLevelMinusBaseline::class;
